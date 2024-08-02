@@ -1,8 +1,11 @@
+import 'package:uuid/uuid.dart';
+
 // Enum to represent task priorities.
 enum Priority { High, Medium, Low }
 
 // Class to represent a task.
 class Task {
+  final String id; // Unique identifier
   final String title; // Title of the task.
   final String description; // Description of the task.
   final DateTime dueDate; // Due date of the task.
@@ -10,6 +13,7 @@ class Task {
   bool isComplete; // Status of task completion.
 
   Task({
+    required this.id,
     required this.title,
     required this.description,
     required this.dueDate,
@@ -21,6 +25,7 @@ class Task {
 // Subclass of Task with no additional properties or methods.
 class TimedTask extends Task {
   TimedTask({
+    required super.id,
     required super.title,
     required super.description,
     required super.dueDate,

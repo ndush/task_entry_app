@@ -1,4 +1,4 @@
-// Mixin to log task completion.
+// task_notifier.dart
 import 'package:task_entry_app/task.dart';
 
 mixin TaskNotifier {
