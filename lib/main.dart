@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'task_entry_screen.dart';
+import 'task_manager.dart';
 
 void main() {
-  runApp(const TaskEntryApp());
+  runApp(TaskEntryApp());
 }
 
 class TaskEntryApp extends StatelessWidget {
-  const TaskEntryApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -16,7 +15,7 @@ class TaskEntryApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.orange,
       ),
-      home: const TaskEntryScreen(),
+      home: TaskEntryScreen(taskManager: TaskManager()), // Inject TaskManager
     );
   }
 }

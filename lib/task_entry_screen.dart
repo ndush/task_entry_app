@@ -1,47 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
 import 'task.dart';
-import 'task_notifier.dart';
+import 'task_manager.dart';
 
 class TaskEntryScreen extends StatefulWidget {
-  const TaskEntryScreen({super.key});
+  final TaskManager taskManager;
+
+  const TaskEntryScreen({Key? key, required this.taskManager}) : super(key: key);
 
   @override
   _TaskEntryScreenState createState() => _TaskEntryScreenState();
 }
 
-class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
-  // List to store tasks
-  final List<Task> _tasks = [];
+class _TaskEntryScreenState extends State<TaskEntryScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  DateTime _selectedDate = DateTime.now(); // Default to current date
-  Priority _selectedPriority = Priority.Medium; // Default priority
-  bool _isSelectionMode = false; // Track if selection mode is active
-  final Set<Task> _selectedTasks = {}; // Store selected tasks
+  DateTime _selectedDate = DateTime.now();
+  Priority _selectedPriority = Priority.Medium;
+  bool _isSelectionMode = false;
+  final Set<Task> _selectedTasks = {};
 
-  // Method to add a new task
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
   void _addTask() {
     setState(() {
-      if (_titleController.text.isNotEmpty) {
-        _tasks.add(Task(
-          id: Uuid().v4(), // Generate a unique ID for the task
-          title: _titleController.text,
-          description: _descriptionController.text,
-          dueDate: _selectedDate,
-          priority: _selectedPriority,
-        ));
-        _titleController.clear();
-        _descriptionController.clear();
-        _selectedDate = DateTime.now(); // Reset date to now
-        _selectedPriority = Priority.Medium; // Reset priority to default
-        _sortTasks(); // Ensure tasks are sorted by priority
-      }
+      widget.taskManager.addTask(
+        _titleController.text,
+        _descriptionController.text,
+        _selectedDate,
+        _selectedPriority,
+      );
+      _titleController.clear();
+      _descriptionController.clear();
+      _selectedDate = DateTime.now();
+      _selectedPriority = Priority.Medium;
     });
   }
 
-  // Method to select a date using a date picker
   void _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -51,68 +51,51 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
-        _selectedDate = picked; // Update selected date
+        _selectedDate = picked;
       });
     }
   }
 
-  // Method to toggle task completion status
   void _toggleTaskCompletion(Task task, bool isComplete) {
     setState(() {
       if (task.isComplete != isComplete) {
         task.isComplete = isComplete;
         if (task.isComplete) {
-          logTaskCompletion(task); // Log task completion using mixin method
+          _logTaskCompletion(task);
         }
       }
     });
   }
 
-  // Method to sort tasks by priority
-  void _sortTasks() {
-    _tasks.sort((a, b) => a.priority.index.compareTo(b.priority.index));
+  void _logTaskCompletion(Task task) {
+    print('Task "${task.title}" completed!');
   }
 
-  // Method to delete a single task
-  void _deleteTask(Task task) {
-    setState(() {
-      _tasks.remove(task); // Remove task from the list
-    });
-  }
-
-  // Method to toggle between selection and normal modes
   void _toggleSelectionMode() {
     setState(() {
-      _isSelectionMode = !_isSelectionMode; // Switch selection mode
-      _selectedTasks.clear(); // Clear any previous selections
+      _isSelectionMode = !_isSelectionMode;
+      _selectedTasks.clear();
     });
   }
 
-  // Method to toggle selection of a task
   void _toggleTaskSelection(Task task) {
     setState(() {
       if (_selectedTasks.contains(task)) {
-        _selectedTasks.remove(task); // Deselect the task
+        _selectedTasks.remove(task);
       } else {
-        _selectedTasks.add(task); // Select the task
+        _selectedTasks.add(task);
       }
     });
   }
 
-  // Method to delete all selected tasks
   void _deleteSelectedTasks() {
     setState(() {
-      _tasks.removeWhere((task) => _selectedTasks.contains(task)); // Remove selected tasks
-      _isSelectionMode = false; // Exit selection mode
-      _selectedTasks.clear(); // Clear selections
+      for (final task in _selectedTasks) {
+        widget.taskManager.deleteTask(task);
+      }
+      _isSelectionMode = false;
+      _selectedTasks.clear();
     });
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 
   @override
@@ -121,7 +104,7 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
       appBar: AppBar(
         title: const Text('Task Entry App'),
         actions: [
-          if (!_isSelectionMode) // Show edit icon only when not in selection mode
+          if (!_isSelectionMode)
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: _toggleSelectionMode,
@@ -130,7 +113,6 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
       ),
       body: Column(
         children: [
-          // Form for adding new tasks
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
@@ -174,7 +156,7 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
                         groupValue: _selectedPriority,
                         onChanged: (Priority? value) {
                           setState(() {
-                            _selectedPriority = value!; // Update priority
+                            _selectedPriority = value!;
                           });
                         },
                       ),
@@ -184,7 +166,7 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
                         groupValue: _selectedPriority,
                         onChanged: (Priority? value) {
                           setState(() {
-                            _selectedPriority = value!; // Update priority
+                            _selectedPriority = value!;
                           });
                         },
                       ),
@@ -194,7 +176,7 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
                         groupValue: _selectedPriority,
                         onChanged: (Priority? value) {
                           setState(() {
-                            _selectedPriority = value!; // Update priority
+                            _selectedPriority = value!;
                           });
                         },
                       ),
@@ -209,7 +191,6 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
               ),
             ),
           ),
-          // Controls for selection mode
           if (_isSelectionMode)
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -218,25 +199,25 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.delete, color: Colors.black),
-                    onPressed: _deleteSelectedTasks, // Delete selected tasks
+                    onPressed: _deleteSelectedTasks,
                   ),
                   ElevatedButton(
-                    onPressed: _toggleSelectionMode, // Cancel selection mode
+                    onPressed: _toggleSelectionMode,
                     child: const Text('Cancel Selection'),
                   ),
                 ],
               ),
             ),
-          // List of tasks
           Expanded(
             child: ListView.builder(
-              itemCount: _tasks.length,
+              itemCount: widget.taskManager.getTasks().length,
               itemBuilder: (context, index) {
-                final task = _tasks[index];
+                final task = widget.taskManager.getTasks()[index];
                 return Dismissible(
-                  key: Key(task.id), // Unique key for each task
+                  key: Key(task.id),
                   onDismissed: (direction) {
-                    _deleteTask(task); // Delete task on swipe
+                    widget.taskManager.deleteTask(task);
+                    setState(() {}); // Refresh UI after deletion
                   },
                   background: Container(
                     color: Colors.red,
@@ -253,16 +234,16 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
                         ? Checkbox(
                       value: _selectedTasks.contains(task),
                       onChanged: (bool? value) {
-                        _toggleTaskSelection(task); // Toggle task selection
+                        _toggleTaskSelection(task);
                       },
                     )
                         : Switch(
                       value: task.isComplete,
-                      onChanged: (bool value) => _toggleTaskCompletion(task, value), // Toggle task completion
+                      onChanged: (bool value) => _toggleTaskCompletion(task, value),
                     ),
                     onTap: _isSelectionMode
                         ? () {
-                      _toggleTaskSelection(task); // Select or deselect task
+                      _toggleTaskSelection(task);
                     }
                         : null,
                   ),
@@ -272,7 +253,6 @@ class _TaskEntryScreenState extends State<TaskEntryScreen> with TaskNotifier {
           ),
         ],
       ),
-      backgroundColor: Colors.orange, // Set background color
     );
   }
 }
